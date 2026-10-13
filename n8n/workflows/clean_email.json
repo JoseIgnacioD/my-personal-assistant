@@ -1,0 +1,45 @@
+{
+  "name": "clean_email",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d616b7f7-a13d-4c33-b99f-8b799ce49999",
+      "name": "When called by another workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns raw Gmail messages into short, clean emails (fewer tokens for the agent).\nconst out = [];\nfor (const item of $input.all()) {\n  const m = item.json;\n  if (!m.id) continue;\n  let body = m.text || m.snippet || '';\n  body = body.replace(/\\r/g, '');\n  body = body.split(/\\n-- ?\\n/)[0];                 // drop the signature\n  body = body.split(/\\nOn .{0,200}wrote:\\n/)[0];     // drop quoted replies (English)\n  body = body.split(/\\nEl .{0,200}escribió:\\n/)[0];  // drop quoted replies (Spanish)\n  body = body.replace(/\\n{3,}/g, '\\n\\n').trim();\n  if (body.length > 1500) body = body.slice(0, 1500) + ' [truncated]';\n  out.push({ json: {\n    id: m.id,\n    from: (m.from && m.from.text) || m.From || '',\n    subject: m.subject || m.Subject || '(no subject)',\n    date: m.date || '',\n    body\n  } });\n}\n// always return at least one item, so the calling workflow keeps running\nreturn out.length ? out : [{ json: { _empty: true } }];"
+      },
+      "id": "0cd77f55-04a7-46b0-ac21-b4fe77392d97",
+      "name": "Clean emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When called by another workflow": {
+      "main": [
+        [
+          {
+            "node": "Clean emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

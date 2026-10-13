@@ -1,0 +1,360 @@
+{
+  "name": "calendar",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar/list",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9c49de1f-07f5-4124-8628-696e83c98424",
+      "name": "Webhook list",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ac5c0224-51b4-4440-8228-9a2144bbc748"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "timeMin",
+              "value": "={{ $json.body.time_min }}"
+            },
+            {
+              "name": "timeMax",
+              "value": "={{ $json.body.time_max }}"
+            },
+            {
+              "name": "singleEvents",
+              "value": "true"
+            },
+            {
+              "name": "orderBy",
+              "value": "startTime"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "99b0e12b-971c-464d-a2ce-04aa81332b70",
+      "name": "Google: list events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const events = $input.first().json.items || [];\nconst data = events.map(e => ({\n  id: e.id,\n  title: e.summary || '(no title)',\n  start: e.start?.dateTime || e.start?.date,\n  end: e.end?.dateTime || e.end?.date,\n  location: e.location || null\n}));\nreturn [{ json: { ok: true, data, error: null } }];"
+      },
+      "id": "476325be-9acf-460a-a167-21de0d548174",
+      "name": "Format list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar/create",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "30c47130-cf9c-45d2-8b31-fc60eb6dd574",
+      "name": "Webhook create",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "a96cf50f-133f-47e3-a040-2b55c22876cd"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body.event) }}"
+      },
+      "id": "6f1618dc-fe44-4e28-8dc5-e2407363a58a",
+      "name": "Google: create event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        200
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "calendar/update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "2842ee12-876c-419f-bf87-8cb79258a3da",
+      "name": "Webhook update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "b9dd288e-027e-49b4-bef0-7bcdb833ba9b"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/primary/events/{{ $json.body.event_id }}",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body.changes) }}"
+      },
+      "id": "c3018d51-0de9-4b7e-b720-16e861e595b9",
+      "name": "Google: move event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        400
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const e = $input.first().json;\nreturn [{ json: { ok: true, data: {\n  id: e.id,\n  title: e.summary,\n  start: e.start?.dateTime || e.start?.date,\n  end: e.end?.dateTime || e.end?.date,\n  link: e.htmlLink\n}, error: null } }];"
+      },
+      "id": "ad1c239f-0557-4760-97d0-30da8e119a17",
+      "name": "Format event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "e1ad867e-7aa0-42a2-aaee-ae5e4ae6edd2",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns any node error into the standard answer Jarvis understands.\nconst item = $input.first().json;\nconst raw = item.error;\nlet message = typeof raw === 'string' ? raw : (raw?.message || item.message || 'Unknown error');\nif (raw && typeof raw === 'object' && raw.description) message += ` (${raw.description})`;\nlet failedNode = 'n8n';\ntry { failedNode = $prevNode.name; } catch (e) {}\nreturn [{ json: { ok: false, data: null, error: `${failedNode}: ${message}` } }];"
+      },
+      "id": "4171ef99-6037-4a7d-8591-b8cfb33c065c",
+      "name": "Format error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "ed7e300c-c268-45bc-a396-bdf6b92354e3",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.error }}"
+      },
+      "id": "6b26f5fb-aa71-4661-adf4-02782ea276bf",
+      "name": "Mark as failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        960,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook list": {
+      "main": [
+        [
+          {
+            "node": "Google: list events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google: list events": {
+      "main": [
+        [
+          {
+            "node": "Format list",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook create": {
+      "main": [
+        [
+          {
+            "node": "Google: create event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google: create event": {
+      "main": [
+        [
+          {
+            "node": "Format event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook update": {
+      "main": [
+        [
+          {
+            "node": "Google: move event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google: move event": {
+      "main": [
+        [
+          {
+            "node": "Format event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format list": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format event": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond error": {
+      "main": [
+        [
+          {
+            "node": "Mark as failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

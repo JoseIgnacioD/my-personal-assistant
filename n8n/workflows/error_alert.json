@@ -1,0 +1,76 @@
+{
+  "name": "error_alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "02f0fd20-4b98-4c2c-a6ad-3d1704dc8571",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Data from the Error Trigger: which workflow failed, where and why.\nconst d = $input.first().json;\nconst wf = d.workflow?.name || 'unknown workflow';\nconst ex = d.execution || {};\nconst message = ex.error?.message || 'no message';\nconst lines = [\n  `Workflow: ${wf}`,\n  `Failed node: ${ex.lastNodeExecuted || 'unknown'}`,\n  `Error: ${message}`,\n  `Time: ${new Date().toISOString()}`,\n  ex.url ? `Execution: ${ex.url}` : ''\n].filter(Boolean);\nreturn [{ json: { subject: `[Jarvis] n8n workflow failed: ${wf}`, body: lines.join('\\n') } }];"
+      },
+      "id": "2d1e0590-9f79-400e-8b98-94889946a9f4",
+      "name": "Build alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "YOUR-EMAIL@example.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "338fbac0-d8e1-49e9-9fb4-7e541bc2aa53",
+      "name": "Gmail: alert me",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build alert": {
+      "main": [
+        [
+          {
+            "node": "Gmail: alert me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

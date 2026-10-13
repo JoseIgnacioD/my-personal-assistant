@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP server",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "mcp_server.server",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Jarvis web app (Chainlit)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "chainlit",
+      "args": [
+        "run",
+        "app.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": true
+    },
+    {
+      "name": "Jarvis API (evaluation)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "api.main",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Chat with Jarvis",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.chat",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Test pipeline (Calendar agent)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.test_pipeline",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "args": [
+        "Is Saturday morning good for a run in Berlin?"
+      ]
+    }
+  ]
+}

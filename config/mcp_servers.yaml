@@ -1,0 +1,10 @@
+# MCP servers the agents load their tools from.
+# ${VAR} values are read from the environment (MCP_URL is set in config/settings.py).
+jarvis:
+  url: ${MCP_URL}
+  transport: streamable_http
+
+# Any third-party MCP server plugs in the same way, then list its tools in agents.yaml:
+# github:
+#   url: <server URL>
+#   transport: streamable_http

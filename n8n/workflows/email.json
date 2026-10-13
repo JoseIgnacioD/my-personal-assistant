@@ -1,0 +1,380 @@
+{
+  "name": "email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email/unread",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6a081534-c245-4f42-95a4-57e27f523710",
+      "name": "Webhook unread",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c475eff3-89c2-4ee7-97c6-e32b19ba12eb"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $json.body.max_results || 10 }}",
+        "simple": false,
+        "filters": {
+          "q": "in:inbox is:unread"
+        },
+        "options": {}
+      },
+      "id": "54101bb3-9c27-444d-8874-3ca1763f1dd6",
+      "name": "Gmail: unread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        0
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email/search",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "eb72237c-80f4-487f-8322-1a757531273e",
+      "name": "Webhook search",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "d6efa7aa-bde3-4535-880c-5bf5029bdaec"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $json.body.max_results || 10 }}",
+        "simple": false,
+        "filters": {
+          "q": "={{ $json.body.query }}"
+        },
+        "options": {}
+      },
+      "id": "3527d6c0-9087-4c66-91ca-b0cabe6cfa38",
+      "name": "Gmail: search",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        200
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "e7d19d53-dd46-42b4-a062-7561521d8dd2",
+      "name": "Run clean_email",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        100
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all().map(i => i.json).filter(e => !e._empty);\nreturn [{ json: { ok: true, data, error: null } }];"
+      },
+      "id": "c87be443-995a-4cfd-9af9-4d96c905686a",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email/send",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "92b7ccb4-bc92-460d-ad8a-5e2a3c967114",
+      "name": "Webhook send",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "fd9a8328-3b01-40c5-a532-9ff1917a76df"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "={{ $json.body.to }}",
+        "subject": "={{ $json.body.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e1f8cdc0-6157-4c8f-aa54-4170365c04b1",
+      "name": "Gmail: send",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        400
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $input.first().json;\nreturn [{ json: { ok: true, data: { id: m.id, sent: true }, error: null } }];"
+      },
+      "id": "3f42d84e-b40f-4e0a-aa8e-73dde31c6c9f",
+      "name": "Format sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "66689b3f-93ea-4876-b964-66ec1a0dfe1a",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns any node error into the standard answer Jarvis understands.\nconst item = $input.first().json;\nconst raw = item.error;\nlet message = typeof raw === 'string' ? raw : (raw?.message || item.message || 'Unknown error');\nif (raw && typeof raw === 'object' && raw.description) message += ` (${raw.description})`;\nlet failedNode = 'n8n';\ntry { failedNode = $prevNode.name; } catch (e) {}\nreturn [{ json: { ok: false, data: null, error: `${failedNode}: ${message}` } }];"
+      },
+      "id": "7020296d-f2c4-45ad-a65d-0aae871ff964",
+      "name": "Format error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "136bdf57-868f-41b7-bb7e-aacfba7d59bd",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.error }}"
+      },
+      "id": "3bb99a4b-a5db-457f-96a4-9d4970b8ae0b",
+      "name": "Mark as failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        960,
+        620
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook unread": {
+      "main": [
+        [
+          {
+            "node": "Gmail: unread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: unread": {
+      "main": [
+        [
+          {
+            "node": "Run clean_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook search": {
+      "main": [
+        [
+          {
+            "node": "Gmail: search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: search": {
+      "main": [
+        [
+          {
+            "node": "Run clean_email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run clean_email": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook send": {
+      "main": [
+        [
+          {
+            "node": "Gmail: send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: send": {
+      "main": [
+        [
+          {
+            "node": "Format sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format sent": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond error": {
+      "main": [
+        [
+          {
+            "node": "Mark as failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

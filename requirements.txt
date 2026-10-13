@@ -1,0 +1,14 @@
+langchain>=1.0
+langgraph>=1.0
+langchain-mcp-adapters
+mcp
+httpx
+python-dotenv
+pyyaml
+chainlit>=2.0
+# LLM provider packages (one per provider used in config/models.yaml):
+langchain-google-genai    # free / free-flash profiles (Gemini)
+langchain-openai          # glm profile (OpenAI-compatible proxy)
+# langchain-anthropic     # uncomment if you add an anthropic: profile
+fastapi                   # api/main.py (evaluation endpoint)
+uvicorn

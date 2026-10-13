@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------- secrets
+# API keys, tokens and the n8n secret live here: never commit them.
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------- runtime data
+# SQLite database with your tasks and token usage (created at runtime)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Process ids written by start-jarvis.ps1
+.jarvis-pids
+
+# ---------------------------------------------------------------- Chainlit
+# Generated on first run (config, translations, uploaded files)
+.chainlit/
+.files/
+
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------- logs
+*.log
+logs/
+
+# ---------------------------------------------------------------- editors and OS
+# Keep the shared VS Code debug configurations, ignore personal settings
+.vscode/*
+!.vscode/launch.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

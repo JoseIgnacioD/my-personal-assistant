@@ -1,0 +1,26 @@
+# Guardrail settings. Restart the app after changing this file.
+
+# Tools that ask the user before running (Chainlit buttons / terminal y/n).
+approval_required:
+  - email_send
+  - calendar_create_event
+  - calendar_update_event
+
+input_guard:
+  # After the regex rules, which model decides whether a request is in scope:
+  #   clef = Cloudflare's Clef decision model: fast, returns a probability per category
+  #   llm  = the profile's specialist model, asked for a structured verdict
+  #   none = regex rules only
+  classifier: clef
+  clef:
+    model: clef-flash        # clef-flash (9B, fast) or clef (27B, more accurate)
+    block_threshold: 0.6     # block when off_topic/injection/harmful wins with at least this probability
+    timeout_seconds: 20      # the first call to a cold model can be slow
+    fallback: llm            # if Clef fails or isn't configured: llm, or allow (fail open)
+
+budget:
+  max_session_cost: 1.00      # in the pricing currency; 0 = no limit
+  max_session_tokens: 300000  # input + output, all agents; 0 = no limit
+
+# Maximum graph steps per request (stops runaway agent loops)
+recursion_limit: 40

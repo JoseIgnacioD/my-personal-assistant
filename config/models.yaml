@@ -1,0 +1,38 @@
+# Model profiles. Switch the default with MODEL_PROFILE in .env,
+# or at runtime from the settings panel (gear icon) in the Chainlit app.
+#
+# Model format: "provider:model" (LangChain init_chat_model). Providers need their package
+# and API key: google_genai -> langchain-google-genai + GOOGLE_API_KEY,
+# openai -> langchain-openai + OPENAI_API_KEY, anthropic -> langchain-anthropic + ANTHROPIC_API_KEY.
+#
+# Optional per profile:
+#   base_url:    send requests to an OpenAI- or Anthropic-compatible proxy instead
+#   api_key_env: name of the .env variable with that proxy's key (keys never go in this file)
+
+default_profile: free
+
+profiles:
+  free:
+    label: Gemini free tier
+    orchestrator: google_genai:gemini-3.5-flash-lite
+    specialists: google_genai:gemini-3.5-flash-lite
+
+  # Adjust model names to the ones your key can use.
+  free-flash:
+    label: Gemini Flash (free tier, stronger orchestrator)
+    orchestrator: google_genai:gemini-2.5-flash
+    specialists: google_genai:gemini-3.5-flash-lite
+
+  # OpenAI-compatible proxy (LiteLLM) at aitokentracker.tech
+  glm:
+    label: GLM via aitokentracker proxy
+    orchestrator: openai:glm-5.3
+    specialists: openai:glm-5.3-flash
+    base_url: https://aitokentracker.tech/v1
+    api_key_env: AITOKENTRACKER_API_KEY
+
+  # Fill in when you have a paid key for the demo, then pick it in the settings panel.
+  # demo:
+  #   label: Demo (paid)
+  #   orchestrator: openai:gpt-4.1
+  #   specialists: openai:gpt-4.1-mini

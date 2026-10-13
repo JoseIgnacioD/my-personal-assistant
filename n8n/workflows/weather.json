@@ -1,0 +1,282 @@
+{
+  "name": "weather",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "weather",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "42f7c9a0-c4fb-4b94-b292-546b68a6720c",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e148d2a5-c0a2-462d-9a38-35d901276c25"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://geocoding-api.open-meteo.com/v1/search",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.body.city }}"
+            },
+            {
+              "name": "count",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "id": "b6dffc80-df5f-4ed3-b7d0-ce4227bdf2dc",
+      "name": "Geocode",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results;\nconst city = $('Webhook').first().json.body.city;\nif (!results || !results.length) {\n  throw new Error(`City \"${city}\" not found`);\n}\nreturn [{ json: results[0] }];"
+      },
+      "id": "f5905850-98c2-469d-9ca8-fb35a5112ef1",
+      "name": "Check city",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.latitude }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.longitude }}"
+            },
+            {
+              "name": "daily",
+              "value": "temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+            },
+            {
+              "name": "timezone",
+              "value": "auto"
+            },
+            {
+              "name": "forecast_days",
+              "value": "={{ $('Webhook').first().json.body.days || 3 }}"
+            }
+          ]
+        }
+      },
+      "id": "87db0b98-7d77-498a-82e7-d10cb9f25455",
+      "name": "Forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const place = $('Check city').first().json;\nconst d = $input.first().json.daily;\nconst days = d.time.map((date, i) => ({\n  date,\n  max_c: d.temperature_2m_max[i],\n  min_c: d.temperature_2m_min[i],\n  rain_chance_pct: d.precipitation_probability_max[i]\n}));\nreturn [{ json: { ok: true, data: { city: place.name, country: place.country, days }, error: null } }];"
+      },
+      "id": "8d0291c6-fa76-47e0-8d34-83e4d3b01174",
+      "name": "Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "350cdd8f-54d1-4504-b740-0b9494bbe6c7",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns any node error into the standard answer Jarvis understands.\nconst item = $input.first().json;\nconst raw = item.error;\nlet message = typeof raw === 'string' ? raw : (raw?.message || item.message || 'Unknown error');\nif (raw && typeof raw === 'object' && raw.description) message += ` (${raw.description})`;\nlet failedNode = 'n8n';\ntry { failedNode = $prevNode.name; } catch (e) {}\nreturn [{ json: { ok: false, data: null, error: `${failedNode}: ${message}` } }];"
+      },
+      "id": "ff1b1b42-41da-468a-9377-6ee2fde8c5a0",
+      "name": "Format error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "81adcb67-8990-4039-850d-718345e6074c",
+      "name": "Respond error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.error }}"
+      },
+      "id": "9ecdb285-d0f2-4a29-8d32-418d714ab834",
+      "name": "Mark as failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Geocode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geocode": {
+      "main": [
+        [
+          {
+            "node": "Check city",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check city": {
+      "main": [
+        [
+          {
+            "node": "Forecast",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forecast": {
+      "main": [
+        [
+          {
+            "node": "Format",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format error": {
+      "main": [
+        [
+          {
+            "node": "Respond error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond error": {
+      "main": [
+        [
+          {
+            "node": "Mark as failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,25 @@
+# Specialist agents. Each one becomes a tool the orchestrator can call.
+#   description: what the orchestrator reads to decide when to use the agent
+#   prompt:      the agent's system prompt ({today} is replaced with today's date)
+#   tools:       MCP tool names; tools that don't exist yet are skipped with a warning
+#
+# To add an agent: write a prompt file, add an entry here, restart. No code changes.
+
+calendar:
+  description: >
+    Anything about the user's calendar: listing events, finding free slots,
+    creating or moving meetings, and checking the weather for outdoor plans.
+  prompt: agents/prompts/calendar.md
+  tools: [calendar_list_events, calendar_create_event, calendar_update_event, weather_get]
+
+email:
+  description: >
+    Reading, summarizing, searching, drafting and sending the user's email.
+  prompt: agents/prompts/email.md
+  tools: [email_list_unread, email_search, email_send]
+
+tasks:
+  description: >
+    The user's to-do list: adding, listing and completing tasks.
+  prompt: agents/prompts/tasks.md
+  tools: [tasks_add, tasks_list, tasks_complete]
