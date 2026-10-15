@@ -1,6 +1,15 @@
-# Jarvis: a multi-agent personal assistant
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/logo_dark.png">
+    <img src="public/logo_light.png" alt="Yerbis" width="360">
+  </picture>
+</p>
 
-Jarvis is a chat assistant that manages your **Google Calendar**, **Gmail**, **to-do tasks** and
+# Yerbis: a multi-agent personal assistant
+
+*Named after **yerba**, the herb of yerba mate: like a good mate, Yerbis keeps you company through the day.*
+
+Yerbis is a chat assistant that manages your **Google Calendar**, **Gmail**, **to-do tasks** and
 **weather** questions. An orchestrator agent built with **LangGraph** delegates each request to
 specialist agents, which use tools exposed through an **MCP server**. The tools reach Google
 through **n8n** workflows. **Guardrails** check every request on the way in, every action before
@@ -28,7 +37,7 @@ MCP, n8n, guardrails, decision models, cost tracking and debugging in one workin
 - **Cost tracking.** Every LLM and Clef call is recorded per agent in SQLite and shown live in the UI.
 - **Model profiles.** Switch between models and providers (Gemini, an OpenAI-compatible proxy,
   OpenAI, Anthropic) from the chat settings, without code changes.
-- **Evaluation.** An n8n workflow runs test prompts against Jarvis and reports a pass rate,
+- **Evaluation.** An n8n workflow runs test prompts against Yerbis and reports a pass rate,
   latency and cost.
 - **Configuration over code.** Agents, models, prices, approvals and guardrails are YAML files.
 
@@ -62,11 +71,13 @@ MCP, n8n, guardrails, decision models, cost tracking and debugging in one workin
 ## Project structure
 
 ```
-jarvis/
+yerbis/
 ├── app.py                  Chainlit web UI: agent steps, approvals, cost table and sidebar
+├── public/                 Yerbis logo (dark and light theme) and favicon, used by Chainlit
+├── .chainlit/config.toml   Chainlit settings, including the app name shown in the UI
 ├── start-jarvis.ps1        Launcher: checks n8n, starts the services, opens the app
 ├── stop-jarvis.ps1         Stops everything the launcher started
-├── api/main.py             Jarvis API: POST /eval, used by the n8n evaluation workflow
+├── api/main.py             Yerbis API: POST /eval, used by the n8n evaluation workflow
 ├── agents/
 │   ├── factory.py          Model profiles, LLMs, specialists built from agents.yaml
 │   ├── graph.py            The graph: input_guard -> orchestrator -> output_guard
@@ -95,8 +106,8 @@ jarvis/
 ### 1. Install
 
 ```powershell
-git clone <your-repo-url> jarvis
-cd jarvis
+git clone <your-repo-url> yerbis
+cd yerbis
 python -m venv .venv
 .venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
@@ -152,7 +163,7 @@ Then:
 
 ```powershell
 .\start-jarvis.ps1                     # MCP server + web app at http://localhost:8000
-.\start-jarvis.ps1 -Api                # also the Jarvis API, for the evaluation
+.\start-jarvis.ps1 -Api                # also the Yerbis API, for the evaluation
 .\start-jarvis.ps1 -Terminal           # terminal chat instead of the web app
 .\start-jarvis.ps1 -ModelProfile glm   # another model profile
 .\stop-jarvis.ps1                      # stop everything (n8n keeps running)
@@ -166,10 +177,10 @@ If PowerShell refuses to run the scripts, allow local scripts once:
 ```bash
 python -m mcp_server.server     # MCP server, port 8001
 chainlit run app.py             # web app, port 8000
-python -m api.main              # Jarvis API, port 8002 (only for the evaluation)
+python -m api.main              # Yerbis API, port 8002 (only for the evaluation)
 ```
 
-## Using Jarvis
+## Using Yerbis
 
 | Try | What happens |
 |---|---|
@@ -195,17 +206,18 @@ All configuration is in `config/`, and needs no code changes:
 | `guardrails.yaml` | Tools that need approval, the classifier (`clef`, `llm` or `none`), Clef threshold, budget, recursion limit |
 | `pricing.yaml` | Price per million input and output tokens for each model |
 | `mcp_servers.yaml` | MCP servers the agents load tools from |
+| `.chainlit/config.toml` and `public/` | The app name (`name` under `[UI]`), the logo (`logo_dark.png`, `logo_light.png`) and the favicon |
 
 ## Evaluation
 
-The `evaluation` workflow in n8n sends 13 test prompts to Jarvis through the Jarvis API and scores
+The `evaluation` workflow in n8n sends 13 test prompts to Yerbis through the Yerbis API and scores
 each one: was it blocked when it should be, were exactly the right specialists called, and was
 approval requested for actions? Actions are automatically rejected during an evaluation, so nothing
 is ever sent.
 
 ![Evaluation](docs/diagrams/4-evaluation.png)
 
-1. Start Jarvis with `.\start-jarvis.ps1 -Api`.
+1. Start Yerbis with `.\start-jarvis.ps1 -Api`.
 2. In n8n, open `evaluation` and click **Execute workflow**.
 3. Open **Score** for one row per test, and **Summary** for the pass rate, average latency, tokens and cost.
 
@@ -218,10 +230,10 @@ waits 20 seconds between cases to stay within the Gemini free tier (15 requests 
 
 - **Read-only calls retry 3 times.** Create, move and send never retry, so a timeout can't
   duplicate an action.
-- **Every failure becomes a clean answer** for Jarvis: `{"ok": false, "error": "<node>: <reason>"}`.
+- **Every failure becomes a clean answer** for Yerbis: `{"ok": false, "error": "<node>: <reason>"}`.
 - **The `error_alert` workflow** emails you the workflow, the failed node and the reason.
 
-## Extending Jarvis
+## Extending Yerbis
 
 | To add | What to do |
 |---|---|
@@ -240,10 +252,17 @@ waits 20 seconds between cases to stay within the Gemini free tier (15 requests 
 | "Authorization data is wrong!" | The `X-Jarvis-Secret` value differs from `N8N_SECRET` |
 | Evaluation: `ECONNREFUSED ::1:8002` | n8n runs in Docker: use `host.docker.internal` and set `API_HOST=0.0.0.0` |
 | `429 RESOURCE_EXHAUSTED` | Free-tier rate limit. Slow down, or switch to a paid profile |
-| Input guard: "classifier unavailable" or "clef unavailable" | Check the API key, or the Cloudflare token's Workers AI permissions; the fallback keeps Jarvis working |
+| Input guard: "classifier unavailable" or "clef unavailable" | Check the API key, or the Cloudflare token's Workers AI permissions; the fallback keeps Yerbis working |
 
 Every service prints prefixed log lines: `[n8n ERROR]`, `[guard]` and `[eval ERROR]`.
 `.vscode/launch.json` has debug configurations for each service.
+
+## About the name
+
+The project started as *Jarvis* and was renamed **Yerbis** for its presentation. Some technical
+identifiers keep the original name on purpose, because renaming them would only break existing
+setups: the launcher scripts (`start-jarvis.ps1`, `stop-jarvis.ps1`), the database file
+`data/jarvis.db`, the `X-Jarvis-Secret` header and the n8n node **Ask Jarvis**.
 
 ## Limitations
 
@@ -251,4 +270,4 @@ Every service prints prefixed log lines: `[n8n ERROR]`, `[guard]` and `[eval ERR
 - The email tools can list, search and send plain-text emails, but can't reply in a thread,
   handle attachments or organize the mailbox.
 - Conversation memory lives in memory and is lost when the app restarts.
-- Jarvis is built for a single user on a local machine.
+- Yerbis is built for a single user on a local machine.

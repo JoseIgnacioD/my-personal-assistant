@@ -15,8 +15,9 @@ data/
 .jarvis-pids
 
 # ---------------------------------------------------------------- Chainlit
-# Generated on first run (config, translations, uploaded files)
-.chainlit/
+# Generated on first run. Keep config.toml (the app name "Yerbis"), ignore the rest.
+.chainlit/*
+!.chainlit/config.toml
 .files/
 
 # ---------------------------------------------------------------- Python
