@@ -1,4 +1,4 @@
-# Jarvis
+# Yervis
 
 A personal assistant built with **LangGraph** agents, **MCP** tools and **n8n** workflows.
 
